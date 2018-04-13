@@ -13,7 +13,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.drawable.AnimationDrawable;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
@@ -196,8 +195,8 @@ public class MainActivity extends AppCompatActivity {
             Log.i("Main Activity", "starting service");
             isBluetoothOK = true;
             bluetoothAdapter.enable();
-            if (!isMyServiceRunning(MainService.class))
-                startService(new Intent(MainActivity.this, MainService.class));
+            if (!isMyServiceRunning(BLE_Service.class))
+                startService(new Intent(MainActivity.this, BLE_Service.class));
         }
         else if (!autoBluetoothOn && !bluetoothAdapter.isEnabled() && !enableBTAlreadyShown) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -220,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (!bluetoothAdapter.isEnabled())
             setBluetoothImage("OFF");
-        else if (isKegConnected())
+        else if (isConnected())
             setBluetoothImage("CONNECTED");
         else
             setBluetoothImage("SEARCHING");
@@ -261,7 +260,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        stopService(new Intent(this, MainService.class));
+        stopService(new Intent(this, BLE_Service.class));
         super.onDestroy();
     }
 
@@ -314,11 +313,11 @@ public class MainActivity extends AppCompatActivity {
                     case BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
                         int connectionstate = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1);
 
-                        if (connectionstate == BluetoothAdapter.STATE_CONNECTED && isKegConnected()) {
+                        if (connectionstate == BluetoothAdapter.STATE_CONNECTED && isConnected()) {
                             setBluetoothImage("CONNECTED");
                             Log.i("MainActivity", "Bluetooth Connected");
                         }
-                        else if (connectionstate == BluetoothAdapter.STATE_DISCONNECTED && !isKegConnected() && bluetoothAdapter.isEnabled()) {
+                        else if (connectionstate == BluetoothAdapter.STATE_DISCONNECTED && !isConnected() && bluetoothAdapter.isEnabled()) {
                             setBluetoothImage("SEARCHING");
                             Log.i("MainActivity", "Bluetooth Disconnected");
                         }
@@ -331,12 +330,13 @@ public class MainActivity extends AppCompatActivity {
                                 setBluetoothImage("SEARCHING");
                                 if (!isPaired())
                                     showPairingHelperDialog();
-                                else if (!isMyServiceRunning(MainService.class))
-                                    startService(new Intent(MainActivity.this, MainService.class));
+                                else if (!isMyServiceRunning(BLE_Service.class))
+                                    startService(new Intent(MainActivity.this, BLE_Service.class));
                                 Log.i("MainActivity", "Bluetooth On");
                                 break;
                             case BluetoothAdapter.STATE_OFF:
                                 setBluetoothImage("OFF");
+                                stopService(new Intent(MainActivity.this, BLE_Service.class));
                                 Log.i("MainActivity", "Bluetooth Off");
                                 break;
                         }
@@ -344,16 +344,6 @@ public class MainActivity extends AppCompatActivity {
                 }
         }
     };
-
-    private boolean isKegConnected () {
-        boolean connected = false;
-        List<BluetoothDevice> devices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
-        if (devices != null)
-            for(BluetoothDevice device : devices)
-                if(device.getName().equals(getResources().getString(R.string.device_name)))
-                    connected = true;
-        return connected;
-    }
 
     // Methods for setting the battery level, state and image
     private void setBatteryLevel (int b) { setBatteryImage(b,battRecharge); }
@@ -492,6 +482,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private boolean isConnected() {
+        boolean connected = false;
+        List<BluetoothDevice> devices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
+        if (devices != null)
+            for(BluetoothDevice device : devices)
+                if(device.getName().equals(getResources().getString(R.string.device_name)))
+                    connected = true;
+        return connected;
+    }
+
     private boolean isPaired() {
         boolean bonded = false;
         Set<BluetoothDevice> bondedDevices = bluetoothAdapter.getBondedDevices();
@@ -601,7 +601,6 @@ public class MainActivity extends AppCompatActivity {
                 .setMessage("Are you sure you want to exit?")
                 .setPositiveButton("Exit", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        stopService(new Intent(MainActivity.this, MainService.class));
                         if (back)
                             MainActivity.super.onBackPressed();
                         else
@@ -630,7 +629,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_pressure:
-                //if (isKegConnected()) TODO renable in final version
+                //if (isConnected()) TODO renable in final version
                     startActivity(new Intent(this, PressureActivity.class));
                 //else
                     //Toast.makeText(this, "No Connection", Toast.LENGTH_SHORT).show();

@@ -1,5 +1,9 @@
 package com.cro.smartkeg.smartkeg;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -17,8 +21,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -57,6 +63,7 @@ public class BLE_Service extends Service {
     initialReadThread init = new initialReadThread();
     List<BLE_Characteristic> allBLE = new ArrayList<>();
 
+    boolean wasBluetoothOn;
 
     private void scanLeDevice(final boolean enable) {
         if (enable) {
@@ -412,28 +419,49 @@ public class BLE_Service extends Service {
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
 
-    }
+        wasBluetoothOn = mBluetoothAdapter.isEnabled();
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this,"SmartKegChannelID")
+                .setSmallIcon(R.drawable.kegfullsize)
+                .setContentTitle("SmartKeg")
+                .setContentText("App is running in the background, monitoring your keg")
+                .setContentIntent(pendingIntent);
+        Notification notification=builder.build();
+        if(Build.VERSION.SDK_INT>=26) {
+            NotificationChannel channel = new NotificationChannel("SmartKegChannelID", "Notifications", NotificationManager.IMPORTANCE_LOW);
+            //channel.setDescription("Channel Description");
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(channel);
+        }
+        startForeground(1, notification);
+
+        IntentFilter myIntentFilter = new IntentFilter(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
+        registerReceiver(onBroadcastReceive, myIntentFilter);
+
         Log.i("BluetoothLE Service", "Service Started");
-        LocalBroadcastManager.getInstance(this).registerReceiver(onBroadcastReceive, new IntentFilter("SmartKeg"));
+        LocalBroadcastManager.getInstance(this).registerReceiver(onBroadcastReceive, new IntentFilter("SmartKeg")); //TODO fix
 
         mLEScanner = mBluetoothAdapter.getBluetoothLeScanner();
         settings = new ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build();
         ScanFilter scanFilter = new ScanFilter.Builder()
-                        .setDeviceName(getApplicationContext().getString(R.string.device_name))
-                        .build();
+                .setDeviceName(getApplicationContext().getString(R.string.device_name))
+                .build();
         filters = new ArrayList<>();
         filters.add(scanFilter);
         Log.i("onResume", "We've got our filters");
 
         scanLeDevice(true);
+    }
 
-        //return super.onStartCommand(intent, flags, startId);
-        return START_NOT_STICKY;
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return super.onStartCommand(intent, flags, startId);
     }
 
     private BroadcastReceiver onBroadcastReceive = new BroadcastReceiver() {
