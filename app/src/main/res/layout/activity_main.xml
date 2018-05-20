@@ -70,13 +70,14 @@
         app:srcCompat="@drawable/beer" />
     <!-- Keg - Beer Whiteout -->
     <View
+        android:id="@+id/view"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:background="@android:color/white"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/imageViewKeg"
-        android:background="@android:color/white"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/imageViewKeg" />
     <!-- Keg -->
     <ImageView
         android:id="@+id/imageViewKeg"
@@ -137,61 +138,17 @@
         app:layout_constraintStart_toStartOf="@id/imageViewKeg"
         app:layout_constraintTop_toBottomOf="@id/imageViewKegBluetooth" /> -->
 
-
-    <!-- Bluetooth _____________________________________________________________________________ -->
-    <!-- Bluetooth - Icon -->
-    <ImageView
-        android:id="@+id/imageViewBluetooth"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginStart="4dp"
-        android:visibility="visible"
-        app:layout_constraintTop_toBottomOf="@id/toolbarMain"
-        app:layout_constraintStart_toStartOf="parent"
-        app:srcCompat="@drawable/bluetooth_icon" />
-    <!-- Bluetooth - Signal -->
-    <ImageView
-        android:id="@+id/imageViewBluetoothSignal"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginTop="4dp"
-        android:visibility="visible"
-        app:layout_constraintTop_toBottomOf="@id/toolbarMain"
-        app:layout_constraintStart_toEndOf="@id/imageViewBluetooth"
-        app:srcCompat="@drawable/wireless_icon" />
-    <!-- Bluetooth - Keg -->
-    <ImageView
-        android:id="@+id/imageViewBluetoothKeg"
-        android:layout_width="30dp"
-        android:layout_height="30dp"
-        android:layout_marginTop="4dp"
-        android:visibility="visible"
-        app:layout_constraintTop_toBottomOf="@id/toolbarMain"
-        app:layout_constraintStart_toEndOf="@id/imageViewBluetoothSignal"
-        app:srcCompat="@drawable/kegfullsize" />
-    <!-- Bluetooth - Text -->
-    <TextView
-        android:id="@+id/textViewBluetoothStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="visible"
-        android:text="Searching..."
-        app:layout_constraintTop_toBottomOf="@id/imageViewBluetooth"
-        app:layout_constraintStart_toStartOf="@id/imageViewBluetooth"
-        app:layout_constraintEnd_toEndOf="@id/imageViewBluetoothKeg"/>
-
     <TextView
         android:id="@+id/textViewLastUpdateTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="4dp"
         android:layout_marginBottom="4dp"
         android:visibility="visible"
         android:text="updated x minutes ago"
         android:textStyle="italic"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 
     <android.support.v7.widget.Toolbar

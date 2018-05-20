@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothManager bluetoothManager;
     private ProgressBar measuringKegProgressBar;
     //private Button newKegButton;
+    Toolbar myToolbar;
 
 
     @Override
@@ -77,8 +78,9 @@ public class MainActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 3); //TODO check if not already granted, follow tutorial at https://developer.android.com/training/permissions/requesting.html#java
 
         //define and set toolbar
-        Toolbar myToolbar = findViewById(R.id.toolbarMain);
+        myToolbar = findViewById(R.id.toolbarMain);
         setSupportActionBar(myToolbar);
+        myToolbar.setSubtitle("");
 
         bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
@@ -218,11 +220,11 @@ public class MainActivity extends AppCompatActivity {
         setBeerLevel(beerLevel);
 
         if (!bluetoothAdapter.isEnabled())
-            setBluetoothImage("OFF");
+            myToolbar.setSubtitle("Bluetooth Off");
         else if (isConnected())
-            setBluetoothImage("CONNECTED");
+            myToolbar.setSubtitle("Connected");
         else
-            setBluetoothImage("SEARCHING");
+            myToolbar.setSubtitle("Trying to Connect");
 
         setKegImage(mySharedPreferences.getString("KEG_SIZE","BIG"));
 
@@ -312,22 +314,29 @@ public class MainActivity extends AppCompatActivity {
 
                     case BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
                         int connectionstate = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1);
-
-                        if (connectionstate == BluetoothAdapter.STATE_CONNECTED && isConnected()) {
-                            setBluetoothImage("CONNECTED");
-                            Log.i("MainActivity", "Bluetooth Connected");
-                        }
-                        else if (connectionstate == BluetoothAdapter.STATE_DISCONNECTED && !isConnected() && bluetoothAdapter.isEnabled()) {
-                            setBluetoothImage("SEARCHING");
-                            Log.i("MainActivity", "Bluetooth Disconnected");
+                        Log.i("MainActivity", "Bluetooth Connection State Change: "+connectionstate);
+                        switch (connectionstate) {
+                            case BluetoothAdapter.STATE_CONNECTED:
+                                if (isConnected()) {
+                                    myToolbar.setSubtitle("Connected");
+                                    Log.i("MainActivity", "Bluetooth Connected");
+                                }
+                                break;
+                            case BluetoothAdapter.STATE_DISCONNECTED:
+                                if (!isConnected() && bluetoothAdapter.isEnabled()) {
+                                    myToolbar.setSubtitle("Trying to Connect");
+                                    Log.i("MainActivity", "Bluetooth Disconnected");
+                                }
+                                break;
                         }
                         break;
 
                     case BluetoothAdapter.ACTION_STATE_CHANGED:
                         int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
+                        Log.i("MainActivity", "Bluetooth State Change: "+state);
                         switch (state) {
                             case BluetoothAdapter.STATE_ON:
-                                setBluetoothImage("SEARCHING");
+                                myToolbar.setSubtitle("Trying to Connect");
                                 if (!isPaired())
                                     showPairingHelperDialog();
                                 else if (!isMyServiceRunning(BLE_Service.class))
@@ -335,12 +344,12 @@ public class MainActivity extends AppCompatActivity {
                                 Log.i("MainActivity", "Bluetooth On");
                                 break;
                             case BluetoothAdapter.STATE_OFF:
-                                setBluetoothImage("OFF");
+                                myToolbar.setSubtitle("Bluetooth Off");
                                 stopService(new Intent(MainActivity.this, BLE_Service.class));
                                 Log.i("MainActivity", "Bluetooth Off");
                                 break;
                         }
-                    break;
+                        break;
                 }
         }
     };
@@ -489,6 +498,7 @@ public class MainActivity extends AppCompatActivity {
             for(BluetoothDevice device : devices)
                 if(device.getName().equals(getResources().getString(R.string.device_name)))
                     connected = true;
+        Log.i("Checking If Connected",connected+"");
         return connected;
     }
 
@@ -499,6 +509,7 @@ public class MainActivity extends AppCompatActivity {
             for (BluetoothDevice device : bondedDevices)
                 if (device.getName().equals(getResources().getString(R.string.device_name)))
                     bonded = true;
+        Log.i("Checking If Bonded",bonded+"");
         return bonded;
     }
 
@@ -520,74 +531,6 @@ public class MainActivity extends AppCompatActivity {
         dialog.setCancelable(false);
         dialog.setCanceledOnTouchOutside(false);
         dialog.show();
-    }
-
-    private void doBluetoothStuff() {
-
-
-        /*if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, 1);
-        }*/
-
-
-        /*List<BluetoothDevice> devices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
-        if (devices != null)
-            for(BluetoothDevice device : devices)
-                if(device.getType() == BluetoothDevice.DEVICE_TYPE_LE && device.getName().equals("SmartKeg"))
-                    true;*/
-
-        //bluetooth
-        /*ImageView blImage = findViewById(R.id.imageViewKegBluetooth);
-        blImage.setVisibility(View.VISIBLE);
-        blImage.setOnClickListener(new ImageView.OnClickListener(){
-          public void onClick (View v) {
-              switch (v.getId()) {
-                  case R.id.imageViewKegBluetooth:
-                      // TESTING ONLY: Bluetooth not available on virtual device
-                      if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-                          Toast.makeText(MainActivity.this, "TBluetooth LE not supported", Toast.LENGTH_SHORT).show();
-                          startActivity(new Intent(Settings.ACTION_SETTINGS));
-                      }
-                      else {
-                          startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
-                      }
-                      break;
-              }
-          }
-        });*/
-
-                /*BluetoothAdapter myBluetoothAdapter;
-        final BluetoothManager myBluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        myBluetoothAdapter = myBluetoothManager.getAdapter();
-        if (myBluetoothAdapter == null || !myBluetoothAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivity(enableBtIntent);
-        }*/
-
-    }
-
-    private void setBluetoothImage(String s) {
-        ImageView bluetoothSignalImage = findViewById(R.id.imageViewBluetoothSignal);
-        TextView bluetoothText = findViewById(R.id.textViewBluetoothStatus);
-        switch (s) {
-            case "SEARCHING":
-                bluetoothSignalImage.setImageResource(R.drawable.bluetooth_wireless_connecting);
-                AnimationDrawable frameAnimation = (AnimationDrawable) bluetoothSignalImage.getDrawable();
-                frameAnimation.start();
-                bluetoothText.setText("Searching");
-                break;
-            case "CONNECTED":
-                bluetoothSignalImage.clearAnimation();
-                bluetoothSignalImage.setImageResource(R.drawable.wireless_icon_ok);
-                bluetoothText.setText("Connected");
-                break;
-            case "OFF":
-                bluetoothSignalImage.clearAnimation();
-                bluetoothSignalImage.setImageResource(R.drawable.wireless_icon_off);
-                bluetoothText.setText("Disabled");
-                break;
-        }
     }
 
     @Override
